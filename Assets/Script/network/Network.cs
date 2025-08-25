@@ -1,77 +1,45 @@
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
+using UnityEngine;
+using Net.Proto;
+using Google.Protobuf;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Net;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using Google.Protobuf;
-using Net.Proto;
+using System.Collections.Concurrent;
 using System.Net.Sockets.Kcp.Simple;
+using System.Net;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using UnityEngine.UI;
+using Unity.Burst.Intrinsics;
+using UnityEngine.SceneManagement;
 
-/// <summary>
-/// KCP + Protobuf 网络客户端（Unity主线程安全、可取消、可复连、带心跳与延迟测量）
-///
-/// 兼容原有接口：
-/// - public static Network _Instance;
-/// - public string SessionID;
-/// - public void init(string server, int port);
-/// - public void PackAndSend(CmdID cmdID, byte[] data);
-/// - public void AddHandleFunc(CmdID cmdID, HandleFunc fun);
-/// - public string GetDelay();
-/// - public void CloseConn();
-/// - public delegate void HandleFunc(CmdID cmdID, byte[] msg);
-/// </summary>
 public class Network : MonoBehaviour
 {
     public static Network _Instance;
 
+    private Hashtable Handlers = new Hashtable();
     public delegate void HandleFunc(CmdID cmdID, byte[] msg);
 
-    // === Public state ===
-    public string SessionID = string.Empty;
-
-    // === Config (set via NetControl.init or Inspector) ===
-    [SerializeField] private string ServerAddr = "127.0.0.1";
-    [SerializeField] private int ServerPort = 22101;
-
-    // === KCP ===
     public SimpleKcpClient client;
-    private IPEndPoint _remoteEndPoint;
+    public string SessionID = "";
+    public BlockingCollection<byte[]> SendQueue = new BlockingCollection<byte[]>();
 
-    // === Tasks & cancellation ===
-    private CancellationTokenSource _cts;
-    private Task _kcpUpdateTask;
-    private Task _recvTask;
-    private Task _heartbeatTask;
+    //private string ServerAddr= "101.32.15.237";
+    private string ServerAddr = "192.168.31.135";
+    private int ServerPort = 22101;
+    private IPEndPoint end;
 
-    // === Dispatch to main thread ===
-    private readonly ConcurrentQueue<Action> _mainThreadActions = new ConcurrentQueue<Action>();
+    private ulong DelayPingSendTime;
+    private ulong DelayPingGotTime;
+    private ulong Delay;
 
-    // === Handlers ===
-    private readonly ConcurrentDictionary<CmdID, HandleFunc> _handlers = new ConcurrentDictionary<CmdID, HandleFunc>();
 
-    // === Delay/Ping ===
-    private ulong _lastPingSendMill;
-    private ulong _lastPingRecvMill;
-    private ulong _delayMill;
-
-    // === Lifecycle ===
-
-    private void Awake()
+    private void Start()
     {
-        // 确保全局单例
-        if (_Instance != null && _Instance != this)
-        {
-            Destroy(this.gameObject);
-            return;
-        }
+        DontDestroyOnLoad(gameObject);
         _Instance = this;
-        DontDestroyOnLoad(this.gameObject);
     }
 
     private void OnDestroy()
@@ -79,232 +47,171 @@ public class Network : MonoBehaviour
         CloseConn();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
-        // 在主线程中分发网络事件（回调一定在主线程执行，避免Unity API跨线程调用）
-        while (_mainThreadActions.TryDequeue(out var action))
+        /*
+        if (client != null && SessionID == "")
         {
-            try { action?.Invoke(); } catch (Exception ex) { Debug.LogException(ex); }
+            GetSessionID();
         }
+        */
     }
 
-    /// <summary>
-    /// 供外部调用：设置服务器地址并建立连接
-    /// </summary>
-    public void init(string server, int port)
+    public void init(string server,int port)
     {
         ServerAddr = server;
         ServerPort = port;
         Init();
     }
 
-    private void Init()
+    public void Init()
     {
-        // 清理旧连接
-        CloseConn();
+        end = new IPEndPoint(IPAddress.Parse(ServerAddr), ServerPort);
+        client = new SimpleKcpClient(0,end);
 
-        _cts = new CancellationTokenSource();
-
-        try
+        //���ڸ���
+        Task.Run(async () =>
         {
-            _remoteEndPoint = new IPEndPoint(IPAddress.Parse(ServerAddr), ServerPort);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[Network] 无效的服务器地址: {ServerAddr}:{ServerPort} - {ex.Message}");
-            return;
-        }
-
-        client = new SimpleKcpClient(0, _remoteEndPoint);
-
-        // 启动KCP update循环（10ms）
-        _kcpUpdateTask = Task.Run(async () =>
-        {
-            var token = _cts.Token;
-            try
+            while (true)
             {
-                while (!token.IsCancellationRequested)
-                {
-                    client.kcp.Update(DateTimeOffset.UtcNow);
-                    await Task.Delay(10, token).ConfigureAwait(false);
-                }
+                client.kcp.Update(DateTimeOffset.UtcNow);
+                await Task.Delay(10);
             }
-            catch (OperationCanceledException) { /* expected */ }
-            catch (Exception ex) { Debug.LogException(ex); }
-        }, _cts.Token);
+        });
 
-        // 启动接收循环
-        _recvTask = Task.Run(async () =>
+        //����
+        Task.Run(async () =>
         {
-            var token = _cts.Token;
-            try
+            while (true)
             {
-                while (!token.IsCancellationRequested)
+                var resp = await client.ReceiveAsync();
+                if (resp.Length == 0)
                 {
-                    var resp = await client.ReceiveAsync().ConfigureAwait(false);
-                    if (resp == null || resp.Length == 0)
-                    {
-                        await Task.Delay(10, token).ConfigureAwait(false);
-                        continue;
-                    }
-
-                    try
-                    {
-                        var packet = Packet.Parser.ParseFrom(resp);
-                        // 处理Greeting / Session / Ping
-                        if (packet.CmdID == (uint)CmdID.CmdIDGreeting)
-                        {
-                            SessionID = packet.SessionID;
-                            if (_lastPingSendMill != 0 && _lastPingRecvMill == 0)
-                            {
-                                _lastPingRecvMill = (ulong)Utils.GetUnixMill();
-                                _delayMill = _lastPingRecvMill - _lastPingSendMill;
-                            }
-                            // 仍然分发给业务，若有需要
-                            EnqueueOnMainThread(() => Handle((CmdID)packet.CmdID, packet.Msg.ToByteArray()));
-                            continue;
-                        }
-
-                        // 其他消息投递给主线程处理
-                        var cmd = (CmdID)packet.CmdID;
-                        var payload = packet.Msg.ToByteArray();
-                        EnqueueOnMainThread(() => Handle(cmd, payload));
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogWarning($"[Network] 收包解析失败：{ex.Message}");
-                    }
+                    await Task.Delay(10);
+                    UnityEngine.Debug.Log("ReceiveAsync=null");
+                    continue;
                 }
-            }
-            catch (OperationCanceledException) { /* expected */ }
-            catch (Exception ex) { Debug.LogException(ex); }
-        }, _cts.Token);
 
-        // 心跳/延迟测量循环（3s）
-        _heartbeatTask = Task.Run(async () =>
-        {
-            var token = _cts.Token;
-            try
-            {
-                while (!token.IsCancellationRequested)
+
+                Packet packet1 = Packet.Parser.ParseFrom(resp[0..resp.Length]);
+                UnityEngine.Debug.Log("[RevWorker]�յ����ݣ�[CMD_" + packet1.CmdID + "]" + Encoding.UTF8.GetString(resp, 0, resp.Length));
+
+
+                //CmdIDGreeting
+                if (packet1.CmdID == (uint)CmdID.CmdIDGreeting)
                 {
-                    var greeting = new Greeting
+                    SessionID = packet1.SessionID;
+                    if (DelayPingGotTime == 0 && DelayPingSendTime!=0)
                     {
-                        Type = GreetingType.PingServer,
-                        Delay = _delayMill,
-                        Msg = "PING"
-                    };
-                    _lastPingRecvMill = 0;
-                    _lastPingSendMill = (ulong)Utils.GetUnixMill();
-                    PackAndSend(CmdID.CmdIDGreeting, greeting.ToByteArray());
-                    await Task.Delay(3000, token).ConfigureAwait(false);
+                        DelayPingGotTime = (ulong)Utils.GetUnixMill();
+                        Delay = DelayPingGotTime - DelayPingSendTime;
+                    }
+                    continue;
                 }
+
+                Handle((CmdID)packet1.CmdID, packet1.Msg.ToByteArray());
             }
-            catch (OperationCanceledException) { /* expected */ }
-            catch (Exception ex) { Debug.LogException(ex); }
-        }, _cts.Token);
+        });
 
-        // 首次建立连接后请求会话
-        var greetingCreate = new Greeting
+        //add handleFuncs
+
+        //get sessionID
+        //GetSessionID();
+
+        UnityEngine.Debug.Log("network.cs init() - ok");
+
+        //auto ping
+        Task.Run(async () =>
         {
-            Type = GreetingType.CreateSession,
-            Msg = "Hello Server! Request a Session!"
-        };
-        PackAndSend(CmdID.CmdIDGreeting, greetingCreate.ToByteArray());
-    }
-
-    // === Public API ===
-
-    public void AddHandleFunc(CmdID cmdID, HandleFunc fun)
-    {
-        _handlers.AddOrUpdate(cmdID, fun, (k, old) => fun);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Network] 注册处理器: {cmdID}");
-#endif
-    }
-
-    public void PackAndSend(CmdID cmdID, byte[] data)
-    {
-        if (client == null)
-        {
-            Debug.LogWarning("[Network] 尚未连接，丢弃发送包");
-            return;
-        }
-
-        try
-        {
-            var packet = new Packet
+            while (true)
             {
-                CmdID = (uint)cmdID,
-                CmdLen = (uint)(data?.Length ?? 0),
-                Msg = ByteString.CopyFrom(data ?? Array.Empty<byte>()),
-                SessionID = SessionID ?? string.Empty,
-                SendTimeStampMill = (ulong)Utils.GetUnixMill()
-            };
+                //UnityEngine.Debug.Log("send:"+DelayPingSendTime.ToString()+" Got:"+DelayPingGotTime.ToString()+" delay:"+Delay.ToString());
+                Greeting greeting = new Greeting();
+                greeting.Type = GreetingType.PingServer;
+                greeting.Delay = Delay;
+                greeting.Msg = "PING";
 
-            client.SendAsync(packet.ToByteArray(), packet.ToByteArray().Length);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogWarning($"[Network] 发送失败: {ex.Message}");
-        }
-    }
+                DelayPingGotTime = 0;
+                DelayPingSendTime = (ulong)Utils.GetUnixMill();
 
-    public string GetDelay()
-    {
-        return _delayMill.ToString();
+                PackAndSend(CmdID.CmdIDGreeting, greeting.ToByteArray());
+                //UnityEngine.Debug.Log("PING:" + greeting.ToString());
+                await Task.Delay(3000);
+            }
+        });
     }
 
     public void CloseConn()
     {
-        // 幂等
-        if (_cts == null) return;
+        //send to server
+        SessionEndNotify pkg = new SessionEndNotify();
+        pkg.CloseType = SessionCloseType.ClientClose;
+        pkg.Msg = "Bye Bye!";
+        PackAndSend(CmdID.CmdIDSessionEndNotify, pkg.ToByteArray());
+        Thread.Sleep(500);
 
-        try
-        {
-            // 通知服务端会话结束
-            var pkg = new SessionEndNotify
-            {
-                CloseType = SessionCloseType.ClientClose,
-                Msg = "Bye Bye!"
-            };
-            PackAndSend(CmdID.CmdIDSessionEndNotify, pkg.ToByteArray());
-        }
-        catch { /* ignore */ }
-
-        try { _cts.Cancel(); } catch { }
-        try
-        {
-            Task.WaitAll(new[] { _kcpUpdateTask, _recvTask, _heartbeatTask }, 200);
-        }
-        catch { /* ignore */ }
-
-        try { client?.close(); } catch { }
-        client = null;
-
-        _cts.Dispose();
-        _cts = null;
+        client.close();
     }
 
-    // === Internal ===
 
-    private void Handle(CmdID cmdID, byte[] msg)
+    public  void PackAndSend(CmdID cmdID, byte[] data)
     {
-        if (_handlers.TryGetValue(cmdID, out var fun))
+        Packet packet = new Packet();
+        packet.CmdID = (uint)cmdID;
+        packet.CmdLen = (UInt32)data.Length;
+        packet.Msg = ByteString.CopyFrom(data);
+        packet.SessionID = SessionID;
+        packet.SendTimeStampMill = (ulong)Utils.GetUnixMill();
+
+        client.SendAsync(packet.ToByteArray(), packet.ToByteArray().Length);
+    }
+
+    private void GetSessionID()
+    {
+        Greeting greeting = new Greeting();
+        greeting.Type = GreetingType.CreateSession;
+        greeting.Msg = "Hello Server! Request a Session!";
+
+        //send ping
+        PackAndSend((uint)CmdID.CmdIDGreeting, greeting.ToByteArray());
+        UnityEngine.Debug.Log("CreateSession PING Sent");
+    }
+
+    public void AddHandleFunc(CmdID cmdID, HandleFunc fun)
+    {
+        if (Handlers.ContainsKey(cmdID))
         {
-            try { fun(cmdID, msg); }
-            catch (Exception ex) { Debug.LogException(ex); }
+            Handlers[cmdID] = fun;
+            //UnityEngine.Debug.LogWarning("AddHandleFunc("+cmdID.ToString()+")�ѱ�����");
         }
         else
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Network] 未注册的指令: {cmdID}");
-#endif
+            Handlers.Add(cmdID, fun);
+
+            UnityEngine.Debug.Log("AddHandleFunc(" + cmdID.ToString() + ")���ӳɹ�");
         }
+        
     }
 
-    private void EnqueueOnMainThread(Action action)
+    public void Handle(CmdID cmdID, byte[] msg)
     {
-        _mainThreadActions.Enqueue(action);
+        var fun = (HandleFunc)Handlers[cmdID];
+        if(fun == null)
+        {
+            UnityEngine.Debug.Log("[CMD_"+cmdID+"]δ�ҵ��䴦������");
+            return;
+        }
+        fun(cmdID,msg);
     }
+
+    /// <summary>
+    /// GetDelay �����ӳ�����
+    /// </summary>
+    /// <returns></returns>
+    public string GetDelay()
+    {
+        return Delay.ToString();
+    }
+
+    
 }

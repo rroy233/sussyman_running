@@ -61,29 +61,13 @@ namespace System.Net.Sockets.Kcp.Simple
             return s;
         }
 
-        
         private async void BeginRecv()
         {
-            while (true)
-            {
-                try
-                {
-                    var res = await client.ReceiveAsync();
-                    EndPoint = res.RemoteEndPoint;
-                    kcp.Input(res.Buffer);
-                }
-                catch (ObjectDisposedException)
-                {
-                    // socket closed
-                    break;
-                }
-                catch (Exception)
-                {
-                    await Task.Delay(10);
-                }
-            }
+            var res = await client.ReceiveAsync();
+            EndPoint = res.RemoteEndPoint;
+            kcp.Input(res.Buffer);
+            BeginRecv();
         }
-    
     }
 }
 

@@ -10,14 +10,7 @@ public class NetworkControl : MonoBehaviour
 
     private void Awake()
     {
-        if (NetClient == null)
-        {
-            NetClient = FindObjectOfType<Network>();
-        }
-        if (NetClient != null && !string.IsNullOrEmpty(addr) && port > 0)
-        {
-            NetClient.init(addr, port);
-        }
+        
     }
 
     private void OnDestroy()
