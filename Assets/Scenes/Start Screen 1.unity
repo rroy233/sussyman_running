@@ -490,8 +490,6 @@ MonoBehaviour:
   MessageText: {fileID: 5588742}
   QuitButton: {fileID: 0}
   FullscreenToggle: {fileID: 0}
-  AutoLoadOnLogin: 0
-  NextSceneName: MainScene
   Net: {fileID: 0}
 --- !u!1 &288868930
 GameObject:
@@ -741,7 +739,7 @@ MonoBehaviour:
   m_CaptionImage: {fileID: 0}
   m_ItemText: {fileID: 437550751}
   m_ItemImage: {fileID: 0}
-  m_Value: 0
+  m_Value: 1
   m_Options:
     m_Options:
     - m_Text: "\u7EBF\u4E0A\u670D"
@@ -2409,7 +2407,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u7EBF\u4E0A\u670D"
+  m_Text: "\u672C\u5730Dev"
 --- !u!222 &1578844674
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2570,8 +2568,6 @@ MonoBehaviour:
   MessageText: {fileID: 0}
   QuitButton: {fileID: 0}
   FullscreenToggle: {fileID: 0}
-  AutoLoadOnLogin: 0
-  NextSceneName: MainScene
   Net: {fileID: 0}
 --- !u!114 &1678191905
 MonoBehaviour:

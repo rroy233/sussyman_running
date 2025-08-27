@@ -23,23 +23,20 @@ public class StartMenu : MonoBehaviour
     public Button QuitButton;               // 可选：退出游戏按钮
     public Toggle FullscreenToggle;         // 可选：是否全屏
 
-    [Header("Post Login")]
-    [Tooltip("登录成功后是否自动切换场景")]
-    public bool AutoLoadOnLogin = false;
-    [Tooltip("登录成功后切换到的场景名")]
-    public string NextSceneName = "MainScene";
-
     [Header("Network")]
-    [Tooltip("可不填，运行时自动查找")]
-    public Network Net;
+    private Network Net = null;
 
     // 内部状态
     private bool _connected = false;
 
     // —— 登录期的临时状态与回调 —— 
     private bool _waitingLogin = false;
-    private Action _loginOkCb;
-    private Action<string> _loginFailCb;
+
+
+    // 主线程待处理标记（在 Update() 消费）
+    private bool _loginOkPending = false;          // 登录成功待处理（主线程）
+    private string _loginErrPending = null;        // 登录失败待处理信息（主线程）
+    private bool _pendingLoadNextScene = false;    // 切场景标记（主线程）
 
     private void Awake()
     {
@@ -64,6 +61,36 @@ public class StartMenu : MonoBehaviour
             QuitButton.onClick.RemoveListener(OnQuitClicked);
         if (FullscreenToggle != null)
             FullscreenToggle.onValueChanged.RemoveListener(OnFullscreenToggle);
+    }
+
+    private void Update()
+    {
+        //Debug.Log($"_loginOkPending={_loginOkPending}, string.IsNullOrEmpty(_loginErrPending)={string.IsNullOrEmpty(_loginErrPending)}, _pendingLoadNextScene={_pendingLoadNextScene}");
+        // 消费登录成功标记（只在主线程处理 Unity API）
+        if (_loginOkPending)
+        {
+            _loginOkPending = false;
+
+            SetMsg("登录成功，SessionID=" + (Net != null ? (Net.SessionID ?? "") : ""));
+            _pendingLoadNextScene = true;
+        }
+
+        // 消费登录失败标记
+        if (!string.IsNullOrEmpty(_loginErrPending))
+        {
+            var err = _loginErrPending;
+            _loginErrPending = null;
+            SetMsg(err);
+            SetInteractable(true);
+        }
+
+        // 消费切场景标记
+        if (_pendingLoadNextScene)
+        {
+            _pendingLoadNextScene = false;
+            Debug.Log(SceneManager.GetActiveScene());
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        }
     }
 
     private void OnFullscreenToggle(bool on)
@@ -119,22 +146,11 @@ public class StartMenu : MonoBehaviour
             return;
         }
 
-        // 确保 Net 存在（按原始做法：需要时创建 NetworkControl + Network）
-        if (Net == null)
-        {
-            Net = FindObjectOfType<Network>();
-            if (Net == null)
-            {
-                var go = new GameObject("NetworkRoot");
-                DontDestroyOnLoad(go);
-                var net = go.AddComponent<Network>();
-                var nc = go.AddComponent<NetworkControl>();
-                nc.NetClient = net;
-                nc.addr = addr;
-                nc.port = port;
-                Net = net;
-            }
-        }
+        var nc = new GameObject("NetworkControl");
+        nc.AddComponent<Network>();
+        Net = nc.GetComponent<Network>();
+        Net.init(addr, int.Parse(portStr));
+        Debug.Log("startMenu.cs client.init() - ok");
 
         SetInteractable(false);
         SetMsg($"正在连接服务器 {addr}:{port} ...");
@@ -157,58 +173,40 @@ public class StartMenu : MonoBehaviour
 
         // 通过本地的 Login(...) 函数发起认证（不依赖 Network.cs 的扩展）
         SetMsg("正在登录...");
-        Login(user, pass,
-            onOk: () =>
-            {
-                Debug.Log("登录成功，SessionID=" + (Net.SessionID ?? ""));
-                SetMsg("登录成功，SessionID=" + (Net.SessionID ?? ""));
-                if (AutoLoadOnLogin && !string.IsNullOrEmpty(NextSceneName))
-                {
-                    SceneManager.LoadScene(NextSceneName);
-                }
-                else
-                {
-                    SetInteractable(true);
-                }
-            },
-            onFail: (err) =>
-            {
-                SetMsg(string.IsNullOrEmpty(err) ? "登录失败" : err);
-                SetInteractable(true);
-            });
+        Login(user, pass);
     }
 
     /// <summary>
-    /// 本地实现的登录流程：
+    /// 本地实现的登录流程（不使用传入回调）：
     /// - 发送 Greeting(LoginReq)，Msg 放 {"u":"..","p":".."}
-    /// - 临时等待 Greeting(LoginResp)，根据 Msg==OK 判定成功与否；
-    /// - 会话ID从服务器外层 Packet.SessionID 注入（Network.cs 里会在收到 Greeting 时设置 SessionID）。
+    /// - 临时等待 Greeting(LoginResp)，根据 Msg==OK 设置主线程待处理标记；
+    /// - 会话ID从服务器外层 Packet.SessionID 注入（Network.cs 收包时应写入）。
     /// </summary>
-    private void Login(string username, string password, Action onOk, Action<string> onFail)
+    private void Login(string username, string password)
     {
         if (_waitingLogin)
         {
-            onFail?.Invoke("正在登录中，请稍候…");
+            SetMsg("正在登录中，请稍候…");
             return;
         }
         if (Net == null)
         {
-            onFail?.Invoke("Network 未就绪");
+            SetMsg("Network 未就绪");
             return;
         }
 
         _waitingLogin = true;
-        _loginOkCb = onOk;
-        _loginFailCb = onFail;
+        _loginOkPending = false;
+        _loginErrPending = null;
 
-        // 注册临时的 Greeting 回调：仅在等待登录时解析 LoginResp
+        // 临时注册 Greeting 处理器（仅登录阶段关注 LoginResp）
         Net.AddHandleFunc(CmdID.CmdIDGreeting, HandleGreetingForLogin);
 
-        // 发送 LoginReq（使用 JSON 载荷；若你们已有 LoginReq.proto，可替换为 ToByteArray()）
+        // 发送 LoginReq（若你们已有 LoginReq.proto，可替换为 Protobuf 二进制）
         var json = $"{{\"u\":\"{username}\",\"p\":\"{password}\"}}";
         var g = new Greeting
         {
-            Type = GreetingType.LoginReq, // 需要在 Define.cs 中声明 LoginReq = 5
+            Type = GreetingType.LoginReq, // 需在 Define.cs 中声明：LoginReq = 5
             Msg = json
         };
         Net.PackAndSend(CmdID.CmdIDGreeting, g.ToByteArray());
@@ -232,22 +230,15 @@ public class StartMenu : MonoBehaviour
 
                 // 此时 Net.SessionID 应由 Network.cs 在收到外层 Packet 时写入
                 if (ok && !string.IsNullOrEmpty(Net.SessionID))
-                    _loginOkCb?.Invoke();
+                    _loginOkPending = true;
                 else
-                    _loginFailCb?.Invoke(string.IsNullOrEmpty(g.Msg) ? "登录失败" : g.Msg);
-
-                // 用完回调即释放
-                _loginOkCb = null;
-                _loginFailCb = null;
+                    _loginErrPending = "登录失败" + g.Msg;
             }
         }
         catch (Exception ex)
         {
             _waitingLogin = false;
-            var err = "登录响应解析失败：" + ex.Message;
-            _loginFailCb?.Invoke(err);
-            _loginOkCb = null;
-            _loginFailCb = null;
+            _loginErrPending = "登录响应解析失败：" + ex.Message;
         }
     }
 

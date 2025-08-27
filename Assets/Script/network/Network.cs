@@ -106,7 +106,7 @@ public class Network : MonoBehaviour
                         DelayPingGotTime = (ulong)Utils.GetUnixMill();
                         Delay = DelayPingGotTime - DelayPingSendTime;
                     }
-                    continue;
+                    //continue;
                 }
 
                 Handle((CmdID)packet1.CmdID, packet1.Msg.ToByteArray());
@@ -121,7 +121,7 @@ public class Network : MonoBehaviour
         UnityEngine.Debug.Log("network.cs init() - ok");
 
         //auto ping
-        Task.Run(async () =>
+        /*Task.Run(async () =>
         {
             while (true)
             {
@@ -138,7 +138,7 @@ public class Network : MonoBehaviour
                 //UnityEngine.Debug.Log("PING:" + greeting.ToString());
                 await Task.Delay(3000);
             }
-        });
+        });*/
     }
 
     public void CloseConn()
@@ -162,6 +162,8 @@ public class Network : MonoBehaviour
         packet.Msg = ByteString.CopyFrom(data);
         packet.SessionID = SessionID;
         packet.SendTimeStampMill = (ulong)Utils.GetUnixMill();
+
+        UnityEngine.Debug.Log($"[PackAndSend] [SessionID:{SessionID}] CMDID:{cmdID} data:{data.ToString()}");
 
         client.SendAsync(packet.ToByteArray(), packet.ToByteArray().Length);
     }

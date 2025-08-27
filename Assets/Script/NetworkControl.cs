@@ -25,7 +25,7 @@ public class NetworkControl : MonoBehaviour
         gameObject.AddComponent<Network>();
         Network._Instance = gameObject.GetComponent<Network>();
         NetClient = Network._Instance;
-        Debug.Log("[NetworkControl]Start()");
+        Debug.Log("[NetworkControl]Start() done!");
     }
 
     public void connect(string addr,int port)
