@@ -20,10 +20,13 @@ public class Network : MonoBehaviour
     public static Network _Instance;
 
     private Hashtable Handlers = new Hashtable();
+    public Dictionary<string, ulong> NameUidMap = new Dictionary<string, ulong>();
     public delegate void HandleFunc(CmdID cmdID, byte[] msg);
 
     public SimpleKcpClient client;
     public string SessionID = "";
+    public string Username = "";  // set after login
+    public ulong UID = 0;          // set when server notifies (e.g., PlaySpawnNotify)
     public BlockingCollection<byte[]> SendQueue = new BlockingCollection<byte[]>();
 
     //private string ServerAddr= "101.32.15.237";
@@ -69,7 +72,7 @@ public class Network : MonoBehaviour
         end = new IPEndPoint(IPAddress.Parse(ServerAddr), ServerPort);
         client = new SimpleKcpClient(0,end);
 
-        //定期更新
+        //瀹氭湡鏇存柊
         Task.Run(async () =>
         {
             while (true)
@@ -79,7 +82,7 @@ public class Network : MonoBehaviour
             }
         });
 
-        //接受
+        //鎺ュ彈
         Task.Run(async () =>
         {
             while (true)
@@ -94,7 +97,7 @@ public class Network : MonoBehaviour
 
 
                 Packet packet1 = Packet.Parser.ParseFrom(resp[0..resp.Length]);
-                UnityEngine.Debug.Log("[RevWorker]收到数据：[CMD_" + packet1.CmdID + "]" + Encoding.UTF8.GetString(resp, 0, resp.Length));
+                UnityEngine.Debug.Log("[RevWorker]鏀跺埌鏁版嵁锛歔CMD_" + packet1.CmdID + "]" + Encoding.UTF8.GetString(resp, 0, resp.Length));
 
 
                 //CmdIDGreeting
@@ -184,13 +187,13 @@ public class Network : MonoBehaviour
         if (Handlers.ContainsKey(cmdID))
         {
             Handlers[cmdID] = fun;
-            //UnityEngine.Debug.LogWarning("AddHandleFunc("+cmdID.ToString()+")已被覆盖");
+            //UnityEngine.Debug.LogWarning("AddHandleFunc("+cmdID.ToString()+")宸茶瑕嗙洊");
         }
         else
         {
             Handlers.Add(cmdID, fun);
 
-            UnityEngine.Debug.Log("AddHandleFunc(" + cmdID.ToString() + ")添加成功");
+            UnityEngine.Debug.Log("AddHandleFunc(" + cmdID.ToString() + ")娣诲姞鎴愬姛");
         }
         
     }
@@ -200,14 +203,14 @@ public class Network : MonoBehaviour
         var fun = (HandleFunc)Handlers[cmdID];
         if(fun == null)
         {
-            UnityEngine.Debug.Log("[CMD_"+cmdID+"]未找到其处理函数");
+            UnityEngine.Debug.Log("[CMD_"+cmdID+"]鏈壘鍒板叾澶勭悊鍑芥暟");
             return;
         }
         fun(cmdID,msg);
     }
 
     /// <summary>
-    /// GetDelay 返回延迟数字
+    /// GetDelay 杩斿洖寤惰繜鏁板瓧
     /// </summary>
     /// <returns></returns>
     public string GetDelay()

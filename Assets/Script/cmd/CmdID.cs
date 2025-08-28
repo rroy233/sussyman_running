@@ -14,7 +14,8 @@ namespace Net.Proto
         CmdIDItemSpawnNotify,
         CmdIDItemPickedNumUpdate,
         CmdIDLevelAdvanceNotify,
-        CmdIDLevelProgressUpdate
+        CmdIDLevelProgressUpdate,
+        CmdIDPlayerOperation
         // 记得以CmdID开头
     }
 }

@@ -8,9 +8,9 @@ using Net.Proto;  // Greeting / GreetingType
 public class StartMenu : MonoBehaviour
 {
     [Header("Server Settings")]
-    [Tooltip("·şÎñÆ÷µØÖ·£¬ÀıÈç 127.0.0.1 »ò 10.0.0.5")]
+    [Tooltip("æœåŠ¡å™¨åœ°å€ï¼Œä¾‹å¦‚ 127.0.0.1 æˆ– 10.0.0.5")]
     public Dropdown ServerAddrDropdown;
-    [Tooltip("·şÎñÆ÷¶Ë¿Ú£¬ÀıÈç 22101")]
+    [Tooltip("æœåŠ¡å™¨ç«¯å£ï¼Œä¾‹å¦‚ 22101")]
     public InputField ServerPortInput;
 
     [Header("Login")]
@@ -19,24 +19,24 @@ public class StartMenu : MonoBehaviour
     public Button LoginButton;
 
     [Header("UI / Misc")]
-    public Text MessageText;                // ÓÃÓÚÌáÊ¾¡°ÕıÔÚµÇÂ¼/´íÎó/³É¹¦¡±
-    public Button QuitButton;               // ¿ÉÑ¡£ºÍË³öÓÎÏ·°´Å¥
-    public Toggle FullscreenToggle;         // ¿ÉÑ¡£ºÊÇ·ñÈ«ÆÁ
+    public Text MessageText;                // ç”¨äºæç¤ºâ€œæ­£åœ¨ç™»å½•/é”™è¯¯/æˆåŠŸâ€
+    public Button QuitButton;               // å¯é€‰ï¼šé€€å‡ºæ¸¸æˆæŒ‰é’®
+    public Toggle FullscreenToggle;         // å¯é€‰ï¼šæ˜¯å¦å…¨å±
 
     [Header("Network")]
     private Network Net = null;
 
-    // ÄÚ²¿×´Ì¬
+    // å†…éƒ¨çŠ¶æ€
     private bool _connected = false;
 
-    // ¡ª¡ª µÇÂ¼ÆÚµÄÁÙÊ±×´Ì¬Óë»Øµ÷ ¡ª¡ª 
+    // â€”â€” ç™»å½•æœŸçš„ä¸´æ—¶çŠ¶æ€ä¸å›è°ƒ â€”â€” 
     private bool _waitingLogin = false;
 
 
-    // Ö÷Ïß³Ì´ı´¦Àí±ê¼Ç£¨ÔÚ Update() Ïû·Ñ£©
-    private bool _loginOkPending = false;          // µÇÂ¼³É¹¦´ı´¦Àí£¨Ö÷Ïß³Ì£©
-    private string _loginErrPending = null;        // µÇÂ¼Ê§°Ü´ı´¦ÀíĞÅÏ¢£¨Ö÷Ïß³Ì£©
-    private bool _pendingLoadNextScene = false;    // ÇĞ³¡¾°±ê¼Ç£¨Ö÷Ïß³Ì£©
+    // ä¸»çº¿ç¨‹å¾…å¤„ç†æ ‡è®°ï¼ˆåœ¨ Update() æ¶ˆè´¹ï¼‰
+    private bool _loginOkPending = false;          // ç™»å½•æˆåŠŸå¾…å¤„ç†ï¼ˆä¸»çº¿ç¨‹ï¼‰
+    private string _loginErrPending = null;        // ç™»å½•å¤±è´¥å¾…å¤„ç†ä¿¡æ¯ï¼ˆä¸»çº¿ç¨‹ï¼‰
+    private bool _pendingLoadNextScene = false;    // åˆ‡åœºæ™¯æ ‡è®°ï¼ˆä¸»çº¿ç¨‹ï¼‰
 
     private void Awake()
     {
@@ -66,26 +66,26 @@ public class StartMenu : MonoBehaviour
     private void Update()
     {
         //Debug.Log($"_loginOkPending={_loginOkPending}, string.IsNullOrEmpty(_loginErrPending)={string.IsNullOrEmpty(_loginErrPending)}, _pendingLoadNextScene={_pendingLoadNextScene}");
-        // Ïû·ÑµÇÂ¼³É¹¦±ê¼Ç£¨Ö»ÔÚÖ÷Ïß³Ì´¦Àí Unity API£©
+        // æ¶ˆè´¹ç™»å½•æˆåŠŸæ ‡è®°ï¼ˆåªåœ¨ä¸»çº¿ç¨‹å¤„ç† Unity APIï¼‰
         if (_loginOkPending)
         {
             _loginOkPending = false;
 
-            SetMsg("µÇÂ¼³É¹¦£¬SessionID=" + (Net != null ? (Net.SessionID ?? "") : ""));
+            SetMsg("ç™»å½•æˆåŠŸï¼ŒSessionID=" + (Net != null ? (Net.SessionID ?? "") : ""));
             _pendingLoadNextScene = true;
         }
 
-        // Ïû·ÑµÇÂ¼Ê§°Ü±ê¼Ç
+        // æ¶ˆè´¹ç™»å½•å¤±è´¥æ ‡è®°
         if (!string.IsNullOrEmpty(_loginErrPending))
         {
             var err = _loginErrPending;
             _loginErrPending = null;
             SetMsg(err);
             SetInteractable(true);
-            Utils.MessageBox(IntPtr.Zero, err, "µÇÂ¼Ê§°Ü", 0);
+            Utils.MessageBox(IntPtr.Zero, err, "ç™»å½•å¤±è´¥", 0);
         }
 
-        // Ïû·ÑÇĞ³¡¾°±ê¼Ç
+        // æ¶ˆè´¹åˆ‡åœºæ™¯æ ‡è®°
         if (_pendingLoadNextScene)
         {
             _pendingLoadNextScene = false;
@@ -110,10 +110,10 @@ public class StartMenu : MonoBehaviour
 
     private void OnLoginClicked()
     {
-        // ÓëÔ­Ê¼ StartMenu.cs Ò»ÖÂ£º¹Ì¶¨µØÖ·±íÀ´×Ô´úÂë
+        // ä¸åŸå§‹ StartMenu.cs ä¸€è‡´ï¼šå›ºå®šåœ°å€è¡¨æ¥è‡ªä»£ç 
         string[] addrs = new string[] { "101.32.15.237", "127.0.0.1" };
 
-        // ¶ÁÈ¡ÏÂÀ­Ñ¡ÔñµØÖ·£¨ÓÅÏÈÓÃ¹Ì¶¨Êı×é£»ÈôÎª¿ÕÔò¶µµ×¶ÁÈ¡ Dropdown.options£©
+        // è¯»å–ä¸‹æ‹‰é€‰æ‹©åœ°å€ï¼ˆä¼˜å…ˆç”¨å›ºå®šæ•°ç»„ï¼›è‹¥ä¸ºç©ºåˆ™å…œåº•è¯»å– Dropdown.optionsï¼‰
         string addr = "";
         if (ServerAddrDropdown != null)
         {
@@ -133,17 +133,17 @@ public class StartMenu : MonoBehaviour
 
         if (string.IsNullOrEmpty(addr))
         {
-            SetMsg("ÇëÌîĞ´·şÎñÆ÷µØÖ·");
+            SetMsg("è¯·å¡«å†™æœåŠ¡å™¨åœ°å€");
             return;
         }
         if (!int.TryParse(portStr, out var port) || port <= 0)
         {
-            SetMsg("¶Ë¿ÚºÅ²»ºÏ·¨");
+            SetMsg("ç«¯å£å·ä¸åˆæ³•");
             return;
         }
         if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass))
         {
-            SetMsg("ÓÃ»§Ãû»òÃÜÂë²»ÄÜÎª¿Õ");
+            SetMsg("ç”¨æˆ·åæˆ–å¯†ç ä¸èƒ½ä¸ºç©º");
             return;
         }
 
@@ -154,7 +154,7 @@ public class StartMenu : MonoBehaviour
         Debug.Log("startMenu.cs client.init() - ok");
 
         SetInteractable(false);
-        SetMsg($"ÕıÔÚÁ¬½Ó·şÎñÆ÷ {addr}:{port} ...");
+        SetMsg($"æ­£åœ¨è¿æ¥æœåŠ¡å™¨ {addr}:{port} ...");
 
         if (!_connected)
         {
@@ -165,35 +165,35 @@ public class StartMenu : MonoBehaviour
             }
             catch (Exception ex)
             {
-                Debug.Log("Á¬½ÓÊ§°Ü£º" + ex.Message);
-                SetMsg("Á¬½ÓÊ§°Ü");
+                Debug.Log("è¿æ¥å¤±è´¥ï¼š" + ex.Message);
+                SetMsg("è¿æ¥å¤±è´¥");
                 SetInteractable(true);
-                Utils.MessageBox(IntPtr.Zero, "Á¬½Ó·şÎñÆ÷Ê§°Ü£¡", "ÌáÊ¾", 0);
+                Utils.MessageBox(IntPtr.Zero, "è¿æ¥æœåŠ¡å™¨å¤±è´¥ï¼", "æç¤º", 0);
                 return;
             }
         }
 
-        // Í¨¹ı±¾µØµÄ Login(...) º¯Êı·¢ÆğÈÏÖ¤£¨²»ÒÀÀµ Network.cs µÄÀ©Õ¹£©
-        SetMsg("ÕıÔÚµÇÂ¼...");
+        // é€šè¿‡æœ¬åœ°çš„ Login(...) å‡½æ•°å‘èµ·è®¤è¯ï¼ˆä¸ä¾èµ– Network.cs çš„æ‰©å±•ï¼‰
+        SetMsg("æ­£åœ¨ç™»å½•...");
         Login(user, pass);
     }
 
     /// <summary>
-    /// ±¾µØÊµÏÖµÄµÇÂ¼Á÷³Ì£¨²»Ê¹ÓÃ´«Èë»Øµ÷£©£º
-    /// - ·¢ËÍ Greeting(LoginReq)£¬Msg ·Å {"u":"..","p":".."}
-    /// - ÁÙÊ±µÈ´ı Greeting(LoginResp)£¬¸ù¾İ Msg==OK ÉèÖÃÖ÷Ïß³Ì´ı´¦Àí±ê¼Ç£»
-    /// - »á»°ID´Ó·şÎñÆ÷Íâ²ã Packet.SessionID ×¢Èë£¨Network.cs ÊÕ°üÊ±Ó¦Ğ´Èë£©¡£
+    /// æœ¬åœ°å®ç°çš„ç™»å½•æµç¨‹ï¼ˆä¸ä½¿ç”¨ä¼ å…¥å›è°ƒï¼‰ï¼š
+    /// - å‘é€ Greeting(LoginReq)ï¼ŒMsg æ”¾ {"u":"..","p":".."}
+    /// - ä¸´æ—¶ç­‰å¾… Greeting(LoginResp)ï¼Œæ ¹æ® Msg==OK è®¾ç½®ä¸»çº¿ç¨‹å¾…å¤„ç†æ ‡è®°ï¼›
+    /// - ä¼šè¯IDä»æœåŠ¡å™¨å¤–å±‚ Packet.SessionID æ³¨å…¥ï¼ˆNetwork.cs æ”¶åŒ…æ—¶åº”å†™å…¥ï¼‰ã€‚
     /// </summary>
     private void Login(string username, string password)
     {
         if (_waitingLogin)
         {
-            SetMsg("ÕıÔÚµÇÂ¼ÖĞ£¬ÇëÉÔºò¡­");
+            SetMsg("æ­£åœ¨ç™»å½•ä¸­ï¼Œè¯·ç¨å€™â€¦");
             return;
         }
         if (Net == null)
         {
-            SetMsg("Network Î´¾ÍĞ÷");
+            SetMsg("Network æœªå°±ç»ª");
             return;
         }
 
@@ -201,46 +201,50 @@ public class StartMenu : MonoBehaviour
         _loginOkPending = false;
         _loginErrPending = null;
 
-        // ÁÙÊ±×¢²á Greeting ´¦ÀíÆ÷£¨½öµÇÂ¼½×¶Î¹Ø×¢ LoginResp£©
+        // ä¸´æ—¶æ³¨å†Œ Greeting å¤„ç†å™¨ï¼ˆä»…ç™»å½•é˜¶æ®µå…³æ³¨ LoginRespï¼‰
         Net.AddHandleFunc(CmdID.CmdIDGreeting, HandleGreetingForLogin);
 
-        // ·¢ËÍ LoginReq£¨ÈôÄãÃÇÒÑÓĞ LoginReq.proto£¬¿ÉÌæ»»Îª Protobuf ¶ş½øÖÆ£©
+        // å‘é€ LoginReqï¼ˆè‹¥ä½ ä»¬å·²æœ‰ LoginReq.protoï¼Œå¯æ›¿æ¢ä¸º Protobuf äºŒè¿›åˆ¶ï¼‰
         var json = $"{{\"u\":\"{username}\",\"p\":\"{password}\"}}";
         var g = new Greeting
         {
-            Type = GreetingType.LoginReq, // ĞèÔÚ Define.cs ÖĞÉùÃ÷£ºLoginReq = 5
+            Type = GreetingType.LoginReq, // éœ€åœ¨ Define.cs ä¸­å£°æ˜ï¼šLoginReq = 5
             Msg = json
         };
         Net.PackAndSend(CmdID.CmdIDGreeting, g.ToByteArray());
     }
 
     /// <summary>
-    /// ½öÔÚµÈ´ıµÇÂ¼½×¶ÎÀ¹½Ø Greeting(LoginResp)¡£
+    /// ä»…åœ¨ç­‰å¾…ç™»å½•é˜¶æ®µæ‹¦æˆª Greeting(LoginResp)ã€‚
     /// </summary>
     private void HandleGreetingForLogin(CmdID cmdID, byte[] msg)
     {
-        if (!_waitingLogin) return;           // ²»ÊÇµÇÂ¼½×¶Î¾ÍÖ±½ÓºöÂÔ
+        if (!_waitingLogin) return;           // ä¸æ˜¯ç™»å½•é˜¶æ®µå°±ç›´æ¥å¿½ç•¥
         if (cmdID != CmdID.CmdIDGreeting) return;
 
         try
         {
             var g = Greeting.Parser.ParseFrom(msg);
-            if (g.Type == GreetingType.LoginResp) // ĞèÒªÔÚ Define.cs ÖĞÉùÃ÷ LoginResp = 6
+            if (g.Type == GreetingType.LoginResp) // éœ€è¦åœ¨ Define.cs ä¸­å£°æ˜ LoginResp = 6
             {
                 _waitingLogin = false;
                 var ok = string.Equals(g.Msg, "OK", StringComparison.OrdinalIgnoreCase);
 
-                // ´ËÊ± Net.SessionID Ó¦ÓÉ Network.cs ÔÚÊÕµ½Íâ²ã Packet Ê±Ğ´Èë
-                if (ok && !string.IsNullOrEmpty(Net.SessionID))
+                // æ­¤æ—¶ Net.SessionID åº”ç”± Network.cs åœ¨æ”¶åˆ°å¤–å±‚ Packet æ—¶å†™å…¥
+                if (ok && !string.IsNullOrEmpty(Net.SessionID)) {
                     _loginOkPending = true;
+                    Net.Username = UsernameInput.text.Trim();
+                }
                 else
-                    _loginErrPending = "µÇÂ¼Ê§°Ü" + g.Msg;
+                {
+                    _loginErrPending = "ç™»å½•å¤±è´¥" + g.Msg;
+                }
             }
         }
         catch (Exception ex)
         {
             _waitingLogin = false;
-            _loginErrPending = "µÇÂ¼ÏìÓ¦½âÎöÊ§°Ü£º" + ex.Message;
+            _loginErrPending = "ç™»å½•å“åº”è§£æå¤±è´¥ï¼š" + ex.Message;
         }
     }
 

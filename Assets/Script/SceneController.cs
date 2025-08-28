@@ -43,7 +43,7 @@ public class SceneController : MonoBehaviour
         Instance = this;
 
         //定义路由
-        Network._Instance.AddHandleFunc(CmdID.CmdIDSceneDataResp, HandleLevelDataResp);
+        Network._Instance.AddHandleFunc(CmdID.CmdIDSceneDataResp, HandleSceneDataResp);
         if (!IsMenu)
         {
             itemSpawnQueue = new Queue<ItemSpawnNotify>();
@@ -133,9 +133,9 @@ public class SceneController : MonoBehaviour
         { DelayInfoText.text = Network._Instance.GetDelay() + "ms"; }
     }
 
-    private void HandleLevelDataResp(CmdID cmdID, byte[] msg)
+    private void HandleSceneDataResp(CmdID cmdID, byte[] msg)
     {
-        var pkg = LevelDataResp.Parser.ParseFrom(msg);
+        var pkg = SceneDataResp.Parser.ParseFrom(msg);
         LevelName = pkg.LevelName;
         CherryCntNeedChange = pkg.CherryCount;
     }
@@ -151,7 +151,7 @@ public class SceneController : MonoBehaviour
 
     private void GetLevelData()
     {
-        var pkg = new LevelDataReq();
+        var pkg = new SceneDataReq();
         pkg.SceneID = SceneManager.GetActiveScene().buildIndex;
 
         Network._Instance.PackAndSend(CmdID.CmdIDSceneDataReq,pkg.ToByteArray());
