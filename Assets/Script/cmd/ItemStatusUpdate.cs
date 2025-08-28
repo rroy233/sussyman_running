@@ -24,17 +24,20 @@ namespace Net.Proto {
     static ItemStatusUpdateReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChZJdGVtU3RhdHVzVXBkYXRlLnByb3RvEgJwYhoMRGVmaW5lLnByb3RvIuIB",
+            "ChZJdGVtU3RhdHVzVXBkYXRlLnByb3RvEgJwYhoMRGVmaW5lLnByb3RvIvIC",
             "ChBJdGVtU3RhdHVzVXBkYXRlEjcKClVwZGF0ZVR5cGUYASABKA4yIy5wYi5J",
             "dGVtU3RhdHVzVXBkYXRlLkl0ZW1VcGRhdGVUeXBlEh8KBEluZm8YAiABKAsy",
             "ES5wYi5JdGVtQmFzaWNJbmZvEi8KDk1vdmVtZW50U3RhdHVzGAMgASgLMhcu",
-            "cGIuQmFzaWNNb3ZlbWVudFN0YXR1cxIPCgdTY2VuZUlEGAQgASgFIjIKDkl0",
-            "ZW1VcGRhdGVUeXBlEgkKBVNwYXduEAASCwoHRGVzdHJveRABEggKBE1vdmUQ",
-            "AkISWgQvY21kqgIJTmV0LlByb3RvYgZwcm90bzM="));
+            "cGIuQmFzaWNNb3ZlbWVudFN0YXR1cxIPCgdTY2VuZUlEGAQgASgFEi0KBVN0",
+            "YXRlGAUgASgOMh4ucGIuSXRlbVN0YXR1c1VwZGF0ZS5JdGVtU3RhdGUSEAoI",
+            "T3duZXJVSUQYBiABKA0SEAoIVHNNaWxsaXMYByABKAQiOwoJSXRlbVN0YXRl",
+            "EggKBElkbGUQABIKCgZBY3RpdmUQARIKCgZQaWNrZWQQAhIMCghEaXNhYmxl",
+            "ZBADIjIKDkl0ZW1VcGRhdGVUeXBlEgkKBVNwYXduEAASCwoHRGVzdHJveRAB",
+            "EggKBE1vdmUQAkISWgQvY21kqgIJTmV0LlByb3RvYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Net.Proto.DefineReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Net.Proto.ItemStatusUpdate), global::Net.Proto.ItemStatusUpdate.Parser, new[]{ "UpdateType", "Info", "MovementStatus", "SceneID" }, null, new[]{ typeof(global::Net.Proto.ItemStatusUpdate.Types.ItemUpdateType) }, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Net.Proto.ItemStatusUpdate), global::Net.Proto.ItemStatusUpdate.Parser, new[]{ "UpdateType", "Info", "MovementStatus", "SceneID", "State", "OwnerUID", "TsMillis" }, null, new[]{ typeof(global::Net.Proto.ItemStatusUpdate.Types.ItemState), typeof(global::Net.Proto.ItemStatusUpdate.Types.ItemUpdateType) }, null, null)
           }));
     }
     #endregion
@@ -79,6 +82,9 @@ namespace Net.Proto {
       info_ = other.info_ != null ? other.info_.Clone() : null;
       movementStatus_ = other.movementStatus_ != null ? other.movementStatus_.Clone() : null;
       sceneID_ = other.sceneID_;
+      state_ = other.state_;
+      ownerUID_ = other.ownerUID_;
+      tsMillis_ = other.tsMillis_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -148,6 +154,51 @@ namespace Net.Proto {
       }
     }
 
+    /// <summary>Field number for the "State" field.</summary>
+    public const int StateFieldNumber = 5;
+    private global::Net.Proto.ItemStatusUpdate.Types.ItemState state_ = global::Net.Proto.ItemStatusUpdate.Types.ItemState.Idle;
+    /// <summary>
+    /// 权威状态
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Net.Proto.ItemStatusUpdate.Types.ItemState State {
+      get { return state_; }
+      set {
+        state_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "OwnerUID" field.</summary>
+    public const int OwnerUIDFieldNumber = 6;
+    private uint ownerUID_;
+    /// <summary>
+    /// 触发/拾取者
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint OwnerUID {
+      get { return ownerUID_; }
+      set {
+        ownerUID_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "TsMillis" field.</summary>
+    public const int TsMillisFieldNumber = 7;
+    private ulong tsMillis_;
+    /// <summary>
+    /// 时间戳(毫秒)
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong TsMillis {
+      get { return tsMillis_; }
+      set {
+        tsMillis_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -167,6 +218,9 @@ namespace Net.Proto {
       if (!object.Equals(Info, other.Info)) return false;
       if (!object.Equals(MovementStatus, other.MovementStatus)) return false;
       if (SceneID != other.SceneID) return false;
+      if (State != other.State) return false;
+      if (OwnerUID != other.OwnerUID) return false;
+      if (TsMillis != other.TsMillis) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -178,6 +232,9 @@ namespace Net.Proto {
       if (info_ != null) hash ^= Info.GetHashCode();
       if (movementStatus_ != null) hash ^= MovementStatus.GetHashCode();
       if (SceneID != 0) hash ^= SceneID.GetHashCode();
+      if (State != global::Net.Proto.ItemStatusUpdate.Types.ItemState.Idle) hash ^= State.GetHashCode();
+      if (OwnerUID != 0) hash ^= OwnerUID.GetHashCode();
+      if (TsMillis != 0UL) hash ^= TsMillis.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -212,6 +269,18 @@ namespace Net.Proto {
         output.WriteRawTag(32);
         output.WriteInt32(SceneID);
       }
+      if (State != global::Net.Proto.ItemStatusUpdate.Types.ItemState.Idle) {
+        output.WriteRawTag(40);
+        output.WriteEnum((int) State);
+      }
+      if (OwnerUID != 0) {
+        output.WriteRawTag(48);
+        output.WriteUInt32(OwnerUID);
+      }
+      if (TsMillis != 0UL) {
+        output.WriteRawTag(56);
+        output.WriteUInt64(TsMillis);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -238,6 +307,18 @@ namespace Net.Proto {
         output.WriteRawTag(32);
         output.WriteInt32(SceneID);
       }
+      if (State != global::Net.Proto.ItemStatusUpdate.Types.ItemState.Idle) {
+        output.WriteRawTag(40);
+        output.WriteEnum((int) State);
+      }
+      if (OwnerUID != 0) {
+        output.WriteRawTag(48);
+        output.WriteUInt32(OwnerUID);
+      }
+      if (TsMillis != 0UL) {
+        output.WriteRawTag(56);
+        output.WriteUInt64(TsMillis);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -259,6 +340,15 @@ namespace Net.Proto {
       }
       if (SceneID != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(SceneID);
+      }
+      if (State != global::Net.Proto.ItemStatusUpdate.Types.ItemState.Idle) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) State);
+      }
+      if (OwnerUID != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(OwnerUID);
+      }
+      if (TsMillis != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TsMillis);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -289,6 +379,15 @@ namespace Net.Proto {
       }
       if (other.SceneID != 0) {
         SceneID = other.SceneID;
+      }
+      if (other.State != global::Net.Proto.ItemStatusUpdate.Types.ItemState.Idle) {
+        State = other.State;
+      }
+      if (other.OwnerUID != 0) {
+        OwnerUID = other.OwnerUID;
+      }
+      if (other.TsMillis != 0UL) {
+        TsMillis = other.TsMillis;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -325,6 +424,18 @@ namespace Net.Proto {
           }
           case 32: {
             SceneID = input.ReadInt32();
+            break;
+          }
+          case 40: {
+            State = (global::Net.Proto.ItemStatusUpdate.Types.ItemState) input.ReadEnum();
+            break;
+          }
+          case 48: {
+            OwnerUID = input.ReadUInt32();
+            break;
+          }
+          case 56: {
+            TsMillis = input.ReadUInt64();
             break;
           }
         }
@@ -364,6 +475,18 @@ namespace Net.Proto {
             SceneID = input.ReadInt32();
             break;
           }
+          case 40: {
+            State = (global::Net.Proto.ItemStatusUpdate.Types.ItemState) input.ReadEnum();
+            break;
+          }
+          case 48: {
+            OwnerUID = input.ReadUInt32();
+            break;
+          }
+          case 56: {
+            TsMillis = input.ReadUInt64();
+            break;
+          }
         }
       }
     }
@@ -374,6 +497,16 @@ namespace Net.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static partial class Types {
+      /// <summary>
+      /// 物件状态（Idle/Active/Picked/Disabled 等）
+      /// </summary>
+      public enum ItemState {
+        [pbr::OriginalName("Idle")] Idle = 0,
+        [pbr::OriginalName("Active")] Active = 1,
+        [pbr::OriginalName("Picked")] Picked = 2,
+        [pbr::OriginalName("Disabled")] Disabled = 3,
+      }
+
       public enum ItemUpdateType {
         [pbr::OriginalName("Spawn")] Spawn = 0,
         [pbr::OriginalName("Destroy")] Destroy = 1,

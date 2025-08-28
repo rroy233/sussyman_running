@@ -12,7 +12,9 @@ namespace Net.Proto
         CmdIDSceneDataReq,
         CmdIDSceneDataResp,
         CmdIDItemSpawnNotify,
-        CmdIDItemPickedNumUpdate
+        CmdIDItemPickedNumUpdate,
+        CmdIDLevelAdvanceNotify,
+        CmdIDLevelProgressUpdate
         // 记得以CmdID开头
     }
 }

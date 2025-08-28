@@ -2,6 +2,7 @@ using Google.Protobuf;
 using Net.Proto;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,6 +10,11 @@ using UnityEngine.UI;
 
 public class SceneController : MonoBehaviour
 {
+    // === Added for server-driven level advance ===
+    private readonly System.Collections.Concurrent.ConcurrentQueue<byte[]> _levelAdvanceQueue = new System.Collections.Concurrent.ConcurrentQueue<byte[]>();
+    private int _pendingNextSceneBuildIndex = -1;
+    // =============================================
+    
     public static SceneController Instance;
 
     [SerializeField] private bool IsMenu=false;
@@ -24,34 +30,73 @@ public class SceneController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Register handler for server broadcast: LevelAdvanceNotify -> advance scene
+        try {
+            Network._Instance.AddHandleFunc(CmdID.CmdIDLevelAdvanceNotify, (cmd, bytes) => {
+                _levelAdvanceQueue.Enqueue(bytes);
+            });
+            Debug.Log("[SceneController] Listening to CmdIDLevelAdvanceNotify for scene advancing.");
+        } catch (System.Exception ex) {
+            Debug.LogError("[SceneController] Failed to register LevelAdvanceNotify handler: " + ex.Message);
+        }
+    
         Instance = this;
 
-        //¶¨ÒåÂ·ÓÉ
+        //å®šä¹‰è·¯ç”±
         Network._Instance.AddHandleFunc(CmdID.CmdIDSceneDataResp, HandleLevelDataResp);
         if (!IsMenu)
         {
             itemSpawnQueue = new Queue<ItemSpawnNotify>();
             Network._Instance.AddHandleFunc(CmdID.CmdIDItemSpawnNotify, HandleSpawn);
 
-            //½ÓÊÜÎïÆ·ÊıÁ¿¸üĞÂÍ¨Öª
+            //æ¥å—ç‰©å“æ•°é‡æ›´æ–°é€šçŸ¥
             Network._Instance.AddHandleFunc(CmdID.CmdIDItemPickedNumUpdate, handleItemPickedNumUpdate);
         }
         Network._Instance.AddHandleFunc(CmdID.CmdIDSessionEndNotify, HandleSessionEnd);
 
-        //»ñÈ¡¹Ø¿¨ĞÅÏ¢
+        //è·å–å…³å¡ä¿¡æ¯
         GetLevelData();
     }
 
     // Update is called once per frame
     void Update()
     {
-        //ÈôÊÇ²Ëµ¥£¬ÔòÖ±½ÓÍÑ³ö
+        
+        // Consume server LevelAdvanceNotify on main thread
+        while (_levelAdvanceQueue.TryDequeue(out var bytes))
+        {
+            try
+            {
+                var pkg = LevelAdvanceNotify.Parser.ParseFrom(bytes);
+                int nextIdx = pkg.NextSceneID > 0 ? pkg.NextSceneID : (SceneManager.GetActiveScene().buildIndex + 1);
+                _pendingNextSceneBuildIndex = nextIdx;
+                Debug.Log($"[SceneController] Received LevelAdvanceNotify -> next build index {nextIdx}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        if (_pendingNextSceneBuildIndex >= 0)
+        {
+            int idx = _pendingNextSceneBuildIndex;
+            _pendingNextSceneBuildIndex = -1;
+            if (idx >= 0 && idx < SceneManager.sceneCountInBuildSettings)
+            {
+                SceneManager.LoadScene(idx);
+            }
+            else
+            {
+                Debug.LogWarning($"[SceneController] Next scene index {idx} out of range; fallback +1");
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            }
+        }
         if (IsMenu)
         {
             return;
         }
 
-        //Éú³ÉÎïÆ·
         if (itemSpawnQueue.Count > 0)
         {
             var pkg = itemSpawnQueue.Dequeue();
@@ -64,17 +109,17 @@ public class SceneController : MonoBehaviour
                         obj.name = pkg.List[i].ItemName;
                         break;
                     default:
-                        Debug.Log("PrefabNameÎŞ·¨Ê¶±ğ:"+ pkg.List[i].PrefabName);
+                        Debug.Log("PrefabNameæ— æ³•è¯†åˆ«:"+ pkg.List[i].PrefabName);
                         break;
                 }
 
             }
         }
 
-        //¸üĞÂUI
+        //UI
         LevelInfoText.text = LevelName;
 
-        //¸üĞÂcherry count
+        //cherry count
         if (CherryCntNeedChange != -1 && GameObject.Find("Player")!=null)
         {
             GameObject.Find("Player").GetComponent<ItemCollecter>().EditCherryCnt(CherryCntNeedChange);
@@ -99,7 +144,7 @@ public class SceneController : MonoBehaviour
     {
         var pkg = ItemPickedNumUpdate.Parser.ParseFrom(msg);
 
-        Debug.Log("Ê°È¡ÎïÊıÁ¿¸üĞÂ->"+pkg.CherryCount.ToString());
+        Debug.Log("æ‹¾å–ç‰©æ•°é‡æ›´æ–°->"+pkg.CherryCount.ToString());
 
         CherryCntNeedChange = pkg.CherryCount;
     }
@@ -124,7 +169,7 @@ public class SceneController : MonoBehaviour
         var nc = GameObject.Find("NetworkControl");
         Destroy(nc);
         SessionEndNotify pkg = new SessionEndNotify();
-        UnityEngine.Debug.Log("·şÎñÆ÷ÖÕÖ¹Á¬½Ó:" + pkg.Msg);
-        Utils.MessageBox(System.IntPtr.Zero, "·şÎñÆ÷ÖÕÖ¹Á¬½Ó£¡", "ÌáÊ¾", 0);
+        UnityEngine.Debug.Log("æœåŠ¡å™¨ç»ˆæ­¢è¿æ¥:" + pkg.Msg);
+        Utils.MessageBox(System.IntPtr.Zero, "æœåŠ¡å™¨ç»ˆæ­¢è¿æ¥ï¼", "æç¤º", 0);
     }
 }

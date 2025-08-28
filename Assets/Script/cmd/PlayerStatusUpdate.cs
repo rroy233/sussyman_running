@@ -25,15 +25,15 @@ namespace Net.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChhQbGF5ZXJTdGF0dXNVcGRhdGUucHJvdG8SAnBiGgxEZWZpbmUucHJvdG8i",
-            "mgEKElBsYXllclN0YXR1c1VwZGF0ZRILCgNVSUQYASABKA0SDAoETmFtZRgC",
+            "wAEKElBsYXllclN0YXR1c1VwZGF0ZRILCgNVSUQYASABKA0SDAoETmFtZRgC",
             "IAEoCRIvCg5Nb3ZlbWVudFN0YXR1cxgDIAEoCzIXLnBiLkJhc2ljTW92ZW1l",
             "bnRTdGF0dXMSDgoGRnJlZXplGAUgASgIEg8KB1NjZW5lSUQYBiABKAUSFwoP",
-            "SXRlbVBpY2tlZENvdW50GAcgASgFQhJaBC9jbWSqAglOZXQuUHJvdG9iBnBy",
-            "b3RvMw=="));
+            "SXRlbVBpY2tlZENvdW50GAcgASgFEhIKCklzRmluaXNoZWQYCCABKAgSEAoI",
+            "VHNNaWxsaXMYCSABKARCEloEL2NtZKoCCU5ldC5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Net.Proto.DefineReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Net.Proto.PlayerStatusUpdate), global::Net.Proto.PlayerStatusUpdate.Parser, new[]{ "UID", "Name", "MovementStatus", "Freeze", "SceneID", "ItemPickedCount" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Net.Proto.PlayerStatusUpdate), global::Net.Proto.PlayerStatusUpdate.Parser, new[]{ "UID", "Name", "MovementStatus", "Freeze", "SceneID", "ItemPickedCount", "IsFinished", "TsMillis" }, null, null, null, null)
           }));
     }
     #endregion
@@ -80,6 +80,8 @@ namespace Net.Proto {
       freeze_ = other.freeze_;
       sceneID_ = other.sceneID_;
       itemPickedCount_ = other.itemPickedCount_;
+      isFinished_ = other.isFinished_;
+      tsMillis_ = other.tsMillis_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -173,6 +175,36 @@ namespace Net.Proto {
       }
     }
 
+    /// <summary>Field number for the "IsFinished" field.</summary>
+    public const int IsFinishedFieldNumber = 8;
+    private bool isFinished_;
+    /// <summary>
+    ///是否到达终点（用于全员到达判定）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool IsFinished {
+      get { return isFinished_; }
+      set {
+        isFinished_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "TsMillis" field.</summary>
+    public const int TsMillisFieldNumber = 9;
+    private ulong tsMillis_;
+    /// <summary>
+    ///客户端发送时间戳(毫秒)
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong TsMillis {
+      get { return tsMillis_; }
+      set {
+        tsMillis_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -194,6 +226,8 @@ namespace Net.Proto {
       if (Freeze != other.Freeze) return false;
       if (SceneID != other.SceneID) return false;
       if (ItemPickedCount != other.ItemPickedCount) return false;
+      if (IsFinished != other.IsFinished) return false;
+      if (TsMillis != other.TsMillis) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -207,6 +241,8 @@ namespace Net.Proto {
       if (Freeze != false) hash ^= Freeze.GetHashCode();
       if (SceneID != 0) hash ^= SceneID.GetHashCode();
       if (ItemPickedCount != 0) hash ^= ItemPickedCount.GetHashCode();
+      if (IsFinished != false) hash ^= IsFinished.GetHashCode();
+      if (TsMillis != 0UL) hash ^= TsMillis.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -249,6 +285,14 @@ namespace Net.Proto {
         output.WriteRawTag(56);
         output.WriteInt32(ItemPickedCount);
       }
+      if (IsFinished != false) {
+        output.WriteRawTag(64);
+        output.WriteBool(IsFinished);
+      }
+      if (TsMillis != 0UL) {
+        output.WriteRawTag(72);
+        output.WriteUInt64(TsMillis);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -283,6 +327,14 @@ namespace Net.Proto {
         output.WriteRawTag(56);
         output.WriteInt32(ItemPickedCount);
       }
+      if (IsFinished != false) {
+        output.WriteRawTag(64);
+        output.WriteBool(IsFinished);
+      }
+      if (TsMillis != 0UL) {
+        output.WriteRawTag(72);
+        output.WriteUInt64(TsMillis);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -310,6 +362,12 @@ namespace Net.Proto {
       }
       if (ItemPickedCount != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(ItemPickedCount);
+      }
+      if (IsFinished != false) {
+        size += 1 + 1;
+      }
+      if (TsMillis != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TsMillis);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -343,6 +401,12 @@ namespace Net.Proto {
       }
       if (other.ItemPickedCount != 0) {
         ItemPickedCount = other.ItemPickedCount;
+      }
+      if (other.IsFinished != false) {
+        IsFinished = other.IsFinished;
+      }
+      if (other.TsMillis != 0UL) {
+        TsMillis = other.TsMillis;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -386,6 +450,14 @@ namespace Net.Proto {
             ItemPickedCount = input.ReadInt32();
             break;
           }
+          case 64: {
+            IsFinished = input.ReadBool();
+            break;
+          }
+          case 72: {
+            TsMillis = input.ReadUInt64();
+            break;
+          }
         }
       }
     #endif
@@ -426,6 +498,14 @@ namespace Net.Proto {
           }
           case 56: {
             ItemPickedCount = input.ReadInt32();
+            break;
+          }
+          case 64: {
+            IsFinished = input.ReadBool();
+            break;
+          }
+          case 72: {
+            TsMillis = input.ReadUInt64();
             break;
           }
         }

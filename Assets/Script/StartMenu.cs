@@ -82,6 +82,7 @@ public class StartMenu : MonoBehaviour
             _loginErrPending = null;
             SetMsg(err);
             SetInteractable(true);
+            Utils.MessageBox(IntPtr.Zero, err, "登录失败", 0);
         }
 
         // 消费切场景标记
@@ -167,6 +168,7 @@ public class StartMenu : MonoBehaviour
                 Debug.Log("连接失败：" + ex.Message);
                 SetMsg("连接失败");
                 SetInteractable(true);
+                Utils.MessageBox(IntPtr.Zero, "连接服务器失败！", "提示", 0);
                 return;
             }
         }

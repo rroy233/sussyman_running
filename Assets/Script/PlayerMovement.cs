@@ -19,9 +19,9 @@ public class PlayerMovement : MonoBehaviour
     private Queue<PlayerStatusUpdate> statusUpdateQueue;
 
     private bool IsSelf = false;
-    private int PlayerNameIndex = 0;
+    public int PlayerNameIndex = 0;
     private int MaxPlayerNum   = 2;
-    private string[] PlayerNames = { "Player" ,"Player_1"};
+    public string[] PlayerNames = { "Player" ,"Player_1"};
 
     [SerializeField] private LayerMask jumpableGround;
 
@@ -51,8 +51,8 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            //自身
-            InvokeRepeating("SelfPlayerStatusUpdate", 1f, 1f);
+            //自身, 以 0 秒延迟，每 0.05 秒执行一次 SelfPlayerStatusUpdate
+            InvokeRepeating("SelfPlayerStatusUpdate", 0f, 0.05f);
             //接受服务器告知的玩家状态更新
             //Network._Instance.AddHandleFunc(CmdID.CmdIDPlayerStatusUpdate, HandlePlayerStatusUpdate);
         }

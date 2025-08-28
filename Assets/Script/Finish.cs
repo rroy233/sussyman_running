@@ -21,6 +21,7 @@ public class Finish : MonoBehaviour
 
     private void CompleteLevel()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        // Wait for server to broadcast all-finished; do not change scene locally.
+        Debug.Log("[Finish] Local player reached end; waiting for server to advance.");
     }
 }
