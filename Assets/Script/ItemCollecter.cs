@@ -14,34 +14,34 @@ public class ItemCollecter : MonoBehaviour
     private static int cherryCnt;
     private static Queue<ItemStatusUpdate> itemStatusUpdateQueue;
 
-    [SerializeField] private  Text cherryCntText;
-    private string cherryCntTextPrefix = "Ó£ÌÒ£º";
+    [SerializeField] private Text cherryCntText;
+    private const string CherryCntTextPrefix = "æ¨±æ¡ƒæ•°ï¼š";
 
     private void Start()
     {
         Instance = this;
         itemStatusUpdateQueue = new Queue<ItemStatusUpdate>();
 
-        //¶¨ÒåÂ·ÓÉ
+        // å®šä¹‰è·¯ç”±
         Network._Instance.AddHandleFunc(CmdID.CmdIDItemStatusUpdate, HandleItemStatusUpdate);
     }
 
     public void AddCherryCnt(int delta)
     {
         cherryCnt += delta;
-        cherryCntText.text = cherryCntTextPrefix+ cherryCnt.ToString();
+        cherryCntText.text = CherryCntTextPrefix + cherryCnt.ToString();
     }
 
     public void EditCherryCnt(int val)
     {
         cherryCnt = val;
-        cherryCntText.text = cherryCntTextPrefix + cherryCnt.ToString();
+        cherryCntText.text = CherryCntTextPrefix + cherryCnt.ToString();
     }
 
     private void Update()
     {
-        //check update queue
-        if(itemStatusUpdateQueue.Count > 0)
+        // check update queue
+        if (itemStatusUpdateQueue.Count > 0)
         {
             var pkg = itemStatusUpdateQueue.Dequeue();
             if (pkg != null)
@@ -49,7 +49,7 @@ public class ItemCollecter : MonoBehaviour
                 var obj = GameObject.Find(pkg.Info.Name);
                 if (obj == null)
                 {
-                    Debug.Log("[HandleItemStatusUpdate]GameObject²»´æÔÚ");
+                    Debug.Log("[HandleItemStatusUpdate]GameObjectä¸å­˜åœ¨");
                 }
                 else
                 {
@@ -65,32 +65,29 @@ public class ItemCollecter : MonoBehaviour
                             break;
                     }
                 }
-
             }
         }
-        
-        
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         /**
-         *  ĞèÒª±»Åö×²µÄÎïÌå¹´Ñ¡ÁËis triggerÑ¡Ïî
+         *  éœ€è¦åœ¨ç¢°æ’å¯¹è±¡å‹¾é€‰ is trigger é€‰é¡¹
          */
         if (collision.gameObject.CompareTag("Cherry"))
         {
-            //·¢ËÍÇëÇó
+            // å‘é€æ‹¾å–é€šçŸ¥
             ItemPickedNotify pkg = new ItemPickedNotify();
             pkg.Info = new ItemBasicInfo();
-            pkg.Info.Name =collision.gameObject.name;
+            pkg.Info.Name = collision.gameObject.name;
             pkg.Info.Tag = collision.gameObject.tag;
             pkg.Info.Type = collision.gameObject.GetType().ToString();
             pkg.Info.Layer = collision.gameObject.layer.ToString();
-            //pkg.Info.PrefabName = collision.gameObject.GetPrefabDefinition().name;
+            // pkg.Info.PrefabName = collision.gameObject.GetPrefabDefinition().name;
             pkg.SceneID = SceneManager.GetActiveScene().buildIndex;
             pkg.TimeStampMicro = Utils.GetUnixMicro();
 
-            Network._Instance.PackAndSend(CmdID.CmdIDItemPickedNotify,pkg.ToByteArray());
+            Network._Instance.PackAndSend(CmdID.CmdIDItemPickedNotify, pkg.ToByteArray());
         }
     }
 
@@ -106,5 +103,4 @@ public class ItemCollecter : MonoBehaviour
     {
         return cherryCnt;
     }
-
 }
