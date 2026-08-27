@@ -150,8 +150,6 @@ public class StartMenu : MonoBehaviour
         var nc = new GameObject("NetworkControl");
         nc.AddComponent<Network>();
         Net = nc.GetComponent<Network>();
-        Net.init(addr, int.Parse(portStr));
-        Debug.Log("startMenu.cs client.init() - ok");
 
         SetInteractable(false);
         SetMsg($"正在连接服务器 {addr}:{port} ...");
@@ -162,6 +160,7 @@ public class StartMenu : MonoBehaviour
             {
                 Net.init(addr, port);
                 _connected = true;
+                Debug.Log("startMenu.cs client.init() - ok");
             }
             catch (Exception ex)
             {

@@ -104,7 +104,8 @@ public class Network : MonoBehaviour
                 if (packet1.CmdID == (uint)CmdID.CmdIDGreeting)
                 {
                     SessionID = packet1.SessionID;
-                    if (DelayPingGotTime == 0 && DelayPingSendTime!=0)
+                    var greeting = Greeting.Parser.ParseFrom(packet1.Msg);
+                    if (greeting.Type == GreetingType.PingResp && DelayPingGotTime == 0 && DelayPingSendTime != 0)
                     {
                         DelayPingGotTime = (ulong)Utils.GetUnixMill();
                         Delay = DelayPingGotTime - DelayPingSendTime;
@@ -124,7 +125,7 @@ public class Network : MonoBehaviour
         UnityEngine.Debug.Log("network.cs init() - ok");
 
         //auto ping
-        /*Task.Run(async () =>
+        Task.Run(async () =>
         {
             while (true)
             {
@@ -141,7 +142,7 @@ public class Network : MonoBehaviour
                 //UnityEngine.Debug.Log("PING:" + greeting.ToString());
                 await Task.Delay(3000);
             }
-        });*/
+        });
     }
 
     public void CloseConn()
