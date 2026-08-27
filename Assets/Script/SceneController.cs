@@ -18,6 +18,7 @@ public class SceneController : MonoBehaviour
     public static SceneController Instance;
 
     [SerializeField] private bool IsMenu=false;
+    [SerializeField] private int SceneID = -1;
     [SerializeField] private GameObject SpawnCherryPrefab;
     [SerializeField] private Text LevelInfoText;
     [SerializeField] private Text DelayInfoText;
@@ -26,6 +27,18 @@ public class SceneController : MonoBehaviour
     private int CherryCntNeedChange = -1;
     private static Queue<ItemSpawnNotify> itemSpawnQueue;
 
+    public static int CurrentSceneID
+    {
+        get
+        {
+            return Instance != null ? Instance.GetSceneID() : SceneManager.GetActiveScene().buildIndex;
+        }
+    }
+
+    private int GetSceneID()
+    {
+        return SceneID >= 0 ? SceneID : SceneManager.GetActiveScene().buildIndex;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -152,7 +165,7 @@ public class SceneController : MonoBehaviour
     private void GetLevelData()
     {
         var pkg = new SceneDataReq();
-        pkg.SceneID = SceneManager.GetActiveScene().buildIndex;
+        pkg.SceneID = GetSceneID();
 
         Network._Instance.PackAndSend(CmdID.CmdIDSceneDataReq,pkg.ToByteArray());
     }

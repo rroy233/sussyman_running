@@ -209,7 +209,7 @@ public class PlayerMovement : MonoBehaviour
         {
             pkg.Freeze = true;
         }
-        pkg.SceneID = SceneManager.GetActiveScene().buildIndex;
+        pkg.SceneID = SceneController.CurrentSceneID;
         pkg.ItemPickedCount = gameObject.GetComponent<ItemCollecter>().GetCherryCnt();
         pkg.IsFinished = isFinished;
 

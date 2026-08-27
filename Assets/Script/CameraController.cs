@@ -5,18 +5,40 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [SerializeField] private Transform player;
-    // Start is called before the first frame update
-    void Start()
+
+    private void Start()
     {
-        if (player == null && PlayerMovement.Instance != null)
-        {
-            player = PlayerMovement.Instance.transform;
-        }
+        ResolvePlayer();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void LateUpdate()
     {
+        ResolvePlayer();
+        if (player == null)
+        {
+            return;
+        }
+
         transform.position = new Vector3(player.position.x,player.position.y,transform.position.z);
+    }
+
+    private void ResolvePlayer()
+    {
+        if (player != null)
+        {
+            return;
+        }
+
+        if (PlayerMovement.Instance != null)
+        {
+            player = PlayerMovement.Instance.transform;
+            return;
+        }
+
+        var playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
+        {
+            player = playerObject.transform;
+        }
     }
 }

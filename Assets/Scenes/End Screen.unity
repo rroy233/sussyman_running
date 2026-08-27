@@ -945,6 +945,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsMenu: 1
+  SceneID: 3
   SpawnCherryPrefab: {fileID: 0}
   LevelInfoText: {fileID: 0}
   DelayInfoText: {fileID: 0}

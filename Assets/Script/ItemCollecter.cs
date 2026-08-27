@@ -84,7 +84,7 @@ public class ItemCollecter : MonoBehaviour
             pkg.Info.Type = collision.gameObject.GetType().ToString();
             pkg.Info.Layer = collision.gameObject.layer.ToString();
             // pkg.Info.PrefabName = collision.gameObject.GetPrefabDefinition().name;
-            pkg.SceneID = SceneManager.GetActiveScene().buildIndex;
+            pkg.SceneID = SceneController.CurrentSceneID;
             pkg.TimeStampMicro = Utils.GetUnixMicro();
 
             Network._Instance.PackAndSend(CmdID.CmdIDItemPickedNotify, pkg.ToByteArray());
