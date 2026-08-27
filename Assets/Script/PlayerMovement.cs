@@ -26,6 +26,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float horizontalVelocity = 7f;
 
     private float dirX = 0f;
+    private bool isFinished = false;
     private enum MovementState { idle, running, jumping, falling };
 
     // -------------------- [NET+] 操作广播（不改本机物理，仅发包） --------------------
@@ -127,6 +128,27 @@ public class PlayerMovement : MonoBehaviour
         }
         updateAnimation();
     }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (!IsSelf || isFinished)
+        {
+            return;
+        }
+
+        if (IsFinishTrigger(collision.gameObject))
+        {
+            isFinished = true;
+            SelfPlayerStatusUpdate();
+            Debug.Log("[PlayerMovement] Player reached finish.");
+        }
+    }
+
+    private bool IsFinishTrigger(GameObject obj)
+    {
+        return obj != null && (obj.name.Contains("CheckpointFlag") || obj.CompareTag("Finish"));
+    }
+
     private void updateAnimation()
     {
         MovementState state;
@@ -189,6 +211,7 @@ public class PlayerMovement : MonoBehaviour
         }
         pkg.SceneID = SceneManager.GetActiveScene().buildIndex;
         pkg.ItemPickedCount = gameObject.GetComponent<ItemCollecter>().GetCherryCnt();
+        pkg.IsFinished = isFinished;
 
         Network._Instance.PackAndSend(CmdID.CmdIDPlayerStatusUpdate, pkg.ToByteArray());
     }
