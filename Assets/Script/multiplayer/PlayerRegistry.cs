@@ -74,7 +74,6 @@ namespace Multiplayer
 
         private void ApplyParsed(PlayerStatusUpdate pkg)
         {
-            var pkgUidCache = pkg.UID;
             var rp = EnsureRemote(pkg.Name);
             if (rp == null) return;
             if (pkg.MovementStatus == null) return;
@@ -114,6 +113,8 @@ namespace Multiplayer
             var ic = go.GetComponent<ItemCollecter>(); if (ic != null) Destroy(ic);
             var life = go.GetComponent<PlayerLife>(); if (life != null) Destroy(life);
 
+            ConfigureRemotePhysics(go);
+
             var remote = go.GetComponent<RemotePlayer2D>(); if (remote == null) remote = go.AddComponent<RemotePlayer2D>();
             remote.PlayerName = name;
 
@@ -125,8 +126,23 @@ namespace Multiplayer
                 sr.color = new Color(c.r, c.g, c.b, sr.color.a);
             }
 
-            _remotes[EnsureRemoteKey(name, (uint)(Network._Instance!=null?Network._Instance.UID:0))] = remote;
+            _remotes[key] = remote;
             return remote;
+        }
+
+        private void ConfigureRemotePhysics(GameObject go)
+        {
+            foreach (var rb in go.GetComponentsInChildren<Rigidbody2D>())
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.simulated = false;
+            }
+
+            foreach (var collider in go.GetComponentsInChildren<Collider2D>())
+            {
+                collider.enabled = false;
+            }
         }
     }
 }
